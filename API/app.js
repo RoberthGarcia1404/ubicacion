@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnUbicacion = document.getElementById('btn-ubicacion');
     const btnReintentar = document.getElementById('btn-reintentar');
     const btnMejorar = document.getElementById('btn-mejorar');
+    const btnRefrescar = document.getElementById('btn-refrescar');
     const infoUbicacion = document.getElementById('info-ubicacion');
     const spanCoordenadas = document.getElementById('coordenadas');
     const spanPrecision = document.getElementById('precision');
@@ -16,12 +17,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const mensajeError = document.getElementById('mensaje-error');
     const divSuelo = document.getElementById('datos-suelo');
     const contenidoCompatibilidad = document.getElementById('contenido-compatibilidad');
-
-    // 🔹 NUEVO botón refrescar
-    const btnRefrescar = document.createElement("button");
-    btnRefrescar.textContent = "🔄 Refrescar datos de suelo";
-    btnRefrescar.style.margin = "10px 0";
-    divResultados.insertAdjacentElement("beforebegin", btnRefrescar);
 
     let posicionActual = null;
     let idSeguimiento = null;
@@ -164,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         divSuelo.innerHTML = html;
 
-        // 🔹 Guardar en localStorage
+        // 🔹 Guardar en localStorage siempre
         localStorage.setItem("datosSuelo", JSON.stringify(datos));
 
         // Compatibilidad
@@ -265,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return procesarDatosSoilGrids(data);
         })
         .catch(err => {
-            // Retornar datos por defecto
+            console.warn("Error en API ISRIC, usando valores por defecto:", err);
             return {
                 pH: 6.2,
                 materiaOrganica: 2.5,
@@ -300,34 +295,38 @@ document.addEventListener('DOMContentLoaded', function() {
                     spanPrecision.textContent = `Precisión: ±${Math.round(precision)} metros`;
                     textoEstado.textContent = evaluarPrecisionGPS(precision);
                     infoUbicacion.classList.remove('oculto');
-                    if (precision < 100) {
-                        divCargando.classList.remove('oculto');
-                        obtenerDatosSuelo(lat, lon)
-                        .then(datosSuelo => {
-                            renderizarDatosSuelo(datosSuelo);
-                            divCargando.classList.add('oculto');
-                            divResultados.classList.remove('oculto');
-                        });
-                    }
+
+                    // 🔹 Siempre consultar SoilGrids al pedir ubicación
+                    divCargando.classList.remove('oculto');
+                    obtenerDatosSuelo(lat, lon)
+                    .then(datosSuelo => {
+                        renderizarDatosSuelo(datosSuelo);
+                        divCargando.classList.add('oculto');
+                        divResultados.classList.remove('oculto');
+                    });
                 },
                 function(error) {
                     divCargando.classList.add('oculto');
-                    let msgError = 'No se pudo obtener la ubicación: ';
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            msgError += 'Permisos de ubicación denegados.';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            msgError += 'Ubicación no disponible.';
-                            break;
-                        case error.TIMEOUT:
-                            msgError += 'Tiempo de espera agotado.';
-                            break;
-                        default:
-                            msgError += 'Error desconocido.';
-                            break;
+                    if (!posicionActual) { // solo mostrar error si nunca se obtuvo ubicación
+                        let msgError = 'No se pudo obtener la ubicación: ';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                msgError += 'Permisos de ubicación denegados.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                msgError += 'Ubicación no disponible.';
+                                break;
+                            case error.TIMEOUT:
+                                msgError += 'Tiempo de espera agotado.';
+                                break;
+                            default:
+                                msgError += 'Error desconocido.';
+                                break;
+                        }
+                        mostrarError(msgError);
+                    } else {
+                        console.warn("Error de geolocalización ignorado porque ya hay una posición previa:", error);
                     }
-                    mostrarError(msgError);
                 },
                 opciones
             );
