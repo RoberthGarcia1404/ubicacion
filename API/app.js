@@ -17,6 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const divSuelo = document.getElementById('datos-suelo');
     const contenidoCompatibilidad = document.getElementById('contenido-compatibilidad');
 
+    // 🔹 NUEVO botón refrescar
+    const btnRefrescar = document.createElement("button");
+    btnRefrescar.textContent = "🔄 Refrescar datos de suelo";
+    btnRefrescar.style.margin = "10px 0";
+    divResultados.insertAdjacentElement("beforebegin", btnRefrescar);
+
     let posicionActual = null;
     let idSeguimiento = null;
 
@@ -157,6 +163,10 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '<p>⚠️ No se pudieron obtener datos específicos de suelo para esta ubicación.</p>';
         }
         divSuelo.innerHTML = html;
+
+        // 🔹 Guardar en localStorage
+        localStorage.setItem("datosSuelo", JSON.stringify(datos));
+
         // Compatibilidad
         if (datos.pH || datos.materiaOrganica) {
             const compatibilidad = analizarCompatibilidad(datos);
@@ -348,6 +358,29 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
-    // Iniciar automáticamente
-    iniciarSeguimientoUbicacion();
+
+    // 🔹 Evento refrescar
+    btnRefrescar.addEventListener("click", function() {
+        if (posicionActual) {
+            const lat = posicionActual.coords.latitude;
+            const lon = posicionActual.coords.longitude;
+            divCargando.classList.remove("oculto");
+            obtenerDatosSuelo(lat, lon).then(datosSuelo => {
+                renderizarDatosSuelo(datosSuelo);
+                divCargando.classList.add("oculto");
+                divResultados.classList.remove("oculto");
+            });
+        } else {
+            alert("Primero obtén tu ubicación antes de refrescar los datos.");
+        }
+    });
+
+    // 🔹 Al cargar, mostrar datos guardados si existen
+    const datosGuardados = localStorage.getItem("datosSuelo");
+    if (datosGuardados) {
+        renderizarDatosSuelo(JSON.parse(datosGuardados));
+        divResultados.classList.remove("oculto");
+    } else {
+        iniciarSeguimientoUbicacion();
+    }
 });
