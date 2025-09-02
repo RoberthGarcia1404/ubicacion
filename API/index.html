@@ -12,59 +12,6 @@
 
 <body>
 
-   <div id="permisoUbicacion">
-  <div>
-    <h3>📍 Activar permisos de ubicación</h3>
-    <p>
-      Para poder mostrar tu ubicación actual en el mapa, debes activar los permisos de ubicación
-      en tu navegador o aplicación.
-    </p>
-    <button onclick="abrirPermisos()" class="btn-permisos">
-      Abrir configuración de permisos
-    </button>
-  </div>
-</div>
-
-<style>
-/* Estilos del modal */
-#permisoUbicacion {
-  display: none; /* oculto por defecto */
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999; /* 🔥 más alto que el mapa */
-}
-
-#permisoUbicacion > div {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 90%;
-  text-align: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-
-#permisoUbicacion h3 {
-  margin-bottom: 10px;
-}
-
-.btn-permisos {
-  margin-top: 10px;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  background: #007bff;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-}
-</style>
 
 
 
@@ -73,6 +20,9 @@
             <h1>🌱 Asistente de Cultivos</h1>
             <p class="subtitle">Obtén recomendaciones de suelo para papa y cebolla</p>
         </header>
+
+
+               <div id="map" style="height:300px; margin-top:15px; border-radius:8px;" class="oculto"></div>
         <div id="info-ubicacion" class="location-info oculto">
             <div class="location-icon">📍</div>
             <div class="location-details">
@@ -91,7 +41,7 @@
 
 
 
-        <div id="map" style="height:300px; margin-top:15px; border-radius:8px;" class="oculto"></div>
+     
 
 
 
@@ -233,17 +183,9 @@
         }
     </script>
 
-<script>
-function mostrarPermisoUbicacion() {
-  document.getElementById("permisoUbicacion").style.display = "flex";
-}
 
-function abrirPermisos() {
-  alert("🔔 Abre la configuración del navegador o de la app para permitir el acceso a la ubicación.\n\nEn móviles, busca 'Permisos' > 'Ubicación'.");
-  // En apps Android/iOS se puede intentar con:
-  // window.location.href = "app-settings:";
-}
-</script>
+
+
 </body>
 
 </html>
