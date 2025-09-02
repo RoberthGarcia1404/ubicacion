@@ -5,13 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistente de Cultivos - Papa y Cebolla</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- ✅ Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
+<body>
+
+
 <body>
     <div class="container">
         <header>
             <h1>🌱 Asistente de Cultivos</h1>
             <p class="subtitle">Obtén recomendaciones de suelo para papa y cebolla</p>
         </header>
+<div id="info-ubicacion" class="location-info oculto">
+    <div class="location-icon">📍</div>
+    <div class="location-details">
+        <p><strong>Ubicación detectada:</strong></p>
+        <div class="coordinates" id="coordenadas">Cargando...</div>
+        <p class="accuracy" id="precision">Precisión: calculando...</p>
+        <div class="gps-status" id="gps-status">
+            <span class="indicador-estado" id="indicador-estado"></span>
+            <span id="texto-estado">Evaluando precisión del GPS...</span>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Aquí se muestra el mapa -->
+<div id="map" style="height:300px; margin-top:15px; border-radius:8px;" class="oculto"></div>
+
+
+
         <div class="content">
             <button id="btn-ubicacion">📍 Obtener mi ubicación automáticamente</button>
             <div id="caja-error" class="error-box oculto">
@@ -90,6 +113,68 @@
             <p>© 2023 - Asistente Agrícola | Datos de suelo: ISRIC SoilGrids</p>
         </footer>
     </div>
+
+
     <script src="app.js"></script>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Crear el mapa
+    const map = L.map('map').setView([0, 0], 15);
+
+    // Agregar capa de mapa (tiles de OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+    }).addTo(map);
+
+    // Marcador para la ubicación
+    let marker;
+
+    // Opciones de geolocalización para más precisión
+    const options = {
+      enableHighAccuracy: true, // GPS en lugar de WiFi
+      timeout: 10000, // esperar máximo 10 seg
+      maximumAge: 0 // no usar cache
+    };
+
+    // Función de éxito
+    function success(pos) {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const accuracy = pos.coords.accuracy; // en metros
+
+      // Centrar el mapa
+      map.setView([lat, lon], 18);
+
+      // Si no existe el marcador lo crea, si existe lo actualiza
+      if (!marker) {
+        marker = L.marker([lat, lon]).addTo(map)
+          .bindPopup(`📍 Estás aquí<br>Precisión: ${accuracy.toFixed(1)} m`)
+          .openPopup();
+      } else {
+        marker.setLatLng([lat, lon])
+          .setPopupContent(`📍 Estás aquí<br>Precisión: ${accuracy.toFixed(1)} m`);
+      }
+    }
+
+    // Función de error
+    function error(err) {
+      console.error(`ERROR(${err.code}): ${err.message}`);
+      alert("No se pudo obtener tu ubicación. Revisa permisos del GPS.");
+    }
+
+    // Seguir en tiempo real la ubicación
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(success, error, options);
+    } else {
+      alert("Tu navegador no soporta geolocalización.");
+    }
+  </script>
 </body>
 </html>
+
+
+
+
+
+
