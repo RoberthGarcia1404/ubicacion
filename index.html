@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente de Cultivos - Papa y Cebolla</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌱 Asistente de Cultivos</h1>
+            <p class="subtitle">Obtén recomendaciones de suelo para papa y cebolla</p>
+        </header>
+        <div class="content">
+            <button id="btn-ubicacion">📍 Obtener mi ubicación automáticamente</button>
+            <div id="caja-error" class="error-box oculto">
+                <strong>Error:</strong> <span id="mensaje-error"></span>
+                <button class="retry-btn" id="btn-reintentar">Reintentar</button>
+            </div>
+            <div id="info-ubicacion" class="location-info oculto">
+                <div class="location-icon">📍</div>
+                <div class="location-details">
+                    <p><strong>Ubicación detectada:</strong></p>
+                    <div class="coordinates" id="coordenadas">Cargando...</div>
+                    <p class="accuracy" id="precision">Precisión: calculando...</p>
+                    <div class="gps-status" id="gps-status">
+                        <span class="indicador-estado" id="indicador-estado"></span>
+                        <span id="texto-estado">Evaluando precisión del GPS...</span>
+                    </div>
+                </div>
+            </div>
+            <div id="cargando" class="loading oculto">
+                <div class="loading-spinner"></div>
+                <p>🔍 Obteniendo datos del suelo desde ISRIC SoilGrids...</p>
+                <p>Esto puede tomar unos segundos</p>
+            </div>
+            <div id="resultados" class="results oculto">
+                <h2>📊 Análisis de Suelo y Recomendaciones</h2>
+                <div id="datos-suelo" class="soil-data">
+                    <!-- Los datos reales del suelo se insertarán aquí -->
+                </div>
+                <div class="crop-card">
+                    <h3 class="crop-title"><span>🥔</span> Cultivo de Papa</h3>
+                    <div class="soil-property">
+                        <span class="property-name">pH ideal:</span> 5.5 - 6.5
+                    </div>
+                    <div class="soil-property">
+                        <span class="property-name">Textura ideal:</span> Franco-arenosa
+                    </div>
+                    <div class="soil-property">
+                        <span class="property-name">Materia orgánica:</span> Alta (3-4%)
+                    </div>
+                    <div class="soil-property">
+                        <span class="property-name">Drenaje:</span> Bueno, evitar encharcamientos
+                    </div>
+                    <div class="recommendation">
+                        💡 <strong>Tip:</strong> Para mejorar el rendimiento, asegúrate de un buen drenaje y rotación de cultivos. La papa es sensible al pH muy alto.
+                    </div>
+                </div>
+                <div class="crop-card">
+                    <h3 class="crop-title"><span>🧅</span> Cultivo de Cebolla</h3>
+                    <div class="soil-property">
+                        <span class="property-name">pH ideal:</span> 6.0 - 7.0
+                    </div>
+                    <div class="soil-property">
+                        <span class="property-name">Textura ideal:</span> Franco-arcillosa
+                    </div>
+                    <div class="soil-property">
+                        <span class="property-name">Materia orgánica:</span> Media (2-3%)
+                    </div>
+                    <div class="soil-property">
+                        <span class="property-name">Drenaje:</span> Bueno, suelos bien estructurados
+                    </div>
+                    <div class="recommendation">
+                        💡 <strong>Tip:</strong> La cebolla prefiere suelos bien drenados con buena exposición solar. Tolera mejor los suelos ligeramente alcalinos que la papa.
+                    </div>
+                </div>
+                <div id="analisis-compatibilidad" class="compatibility-analysis">
+                    <h3 style="color: #007bff;">🔬 Análisis de Compatibilidad del Suelo</h3>
+                    <div id="contenido-compatibilidad">
+                        <!-- El análisis de compatibilidad se insertará aquí -->
+                    </div>
+                </div>
+                <button class="improve-btn" id="btn-mejorar">🔄 Mejorar precisión de ubicación</button>
+            </div>
+        </div>
+        <footer>
+            <p>🌾 Usa esta herramienta para planificar tus cultivos de papa y cebolla</p>
+            <p>© 2023 - Asistente Agrícola | Datos de suelo: ISRIC SoilGrids</p>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
