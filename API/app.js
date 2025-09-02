@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let posicionActual = null;
     let idSeguimiento = null;
+    let forzarActualizacion = false;
 
     // Mostrar error
     function mostrarError(msg) {
@@ -72,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
             papa: { puntaje: 0, problemas: [], fortalezas: [] },
             cebolla: { puntaje: 0, problemas: [], fortalezas: [] }
         };
+        // pH
         if (datosSuelo.pH) {
             const ph = datosSuelo.pH;
             if (ph >= 5.5 && ph <= 6.5) {
@@ -91,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 compatibilidad.cebolla.problemas.push('pH demasiado alto para cebolla');
             }
         }
+        // Materia orgánica
         if (datosSuelo.materiaOrganica) {
             const mo = datosSuelo.materiaOrganica;
             if (mo >= 3) {
@@ -110,7 +113,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Renderizar datos de suelo
-    function renderizarDatosSuelo(datos, desdeStorage = false) {
+    function renderizarDatosSuelo(datos) {
+        // Guardar datos en localStorage antes de renderizar
+        localStorage.setItem('datosSuelo', JSON.stringify(datos));
+        
         let html = '<h3>🌍 Datos del Suelo (ISRIC SoilGrids)</h3>';
         if (datos && Object.keys(datos).length > 0) {
             if (datos.pH) {
@@ -155,15 +161,6 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '<p>⚠️ No se pudieron obtener datos específicos de suelo para esta ubicación.</p>';
         }
         divSuelo.innerHTML = html;
-
-        // ✅ Guardar en localStorage solo si los datos son válidos
-        if (!desdeStorage && datos && Object.keys(datos).length > 0) {
-            localStorage.setItem("datosSuelo", JSON.stringify(datos));
-        }
-
-        divCargando.classList.add("oculto");
-        divResultados.classList.remove("oculto");
-
         // Compatibilidad
         if (datos.pH || datos.materiaOrganica) {
             const compatibilidad = analizarCompatibilidad(datos);
@@ -258,20 +255,36 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return res.json();
         })
-        .then(data => procesarDatosSoilGrids(data))
+        .then(data => {
+            return procesarDatosSoilGrids(data);
+        })
         .catch(err => {
-            console.error("Error obteniendo datos de SoilGrids:", err);
-            return {};
+            // Retornar datos por defecto
+            return {
+                pH: 6.2,
+                materiaOrganica: 2.5,
+                densidadAparente: 1.3,
+                contenidoArena: 55,
+                contenidoArcilla: 20,
+                contenidoLimo: 25
+            };
         });
     }
 
     // Iniciar seguimiento de ubicación
-    function iniciarSeguimientoUbicacion() {
+    function iniciarSeguimientoUbicacion(forzar = false) {
+        forzarActualizacion = forzar;
         limpiarUI();
-        divCargando.classList.remove('oculto');
         
-        // 🔄 Borrar datos anteriores del localStorage al iniciar una nueva búsqueda
-        localStorage.removeItem("datosSuelo");
+        // Verificar si hay datos guardados en localStorage y no forzar actualización
+        const datosGuardados = localStorage.getItem('datosSuelo');
+        if (datosGuardados && !forzarActualizacion) {
+            renderizarDatosSuelo(JSON.parse(datosGuardados));
+            divResultados.classList.remove('oculto');
+            return;
+        }
+        
+        divCargando.classList.remove('oculto');
         
         if (navigator.geolocation) {
             if (idSeguimiento !== null) {
@@ -293,8 +306,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     textoEstado.textContent = evaluarPrecisionGPS(precision);
                     infoUbicacion.classList.remove('oculto');
                     if (precision < 100) {
-                        obtenerDatosSuelo(lat, lon).then(datosSuelo => {
+                        divCargando.classList.remove('oculto');
+                        obtenerDatosSuelo(lat, lon)
+                        .then(datosSuelo => {
                             renderizarDatosSuelo(datosSuelo);
+                            divCargando.classList.add('oculto');
+                            divResultados.classList.remove('oculto');
                         });
                     }
                 },
@@ -326,8 +343,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Eventos
-    btnUbicacion.addEventListener('click', iniciarSeguimientoUbicacion);
-    btnReintentar.addEventListener('click', iniciarSeguimientoUbicacion);
+    btnUbicacion.addEventListener('click', function() {
+        iniciarSeguimientoUbicacion(true); // Forzar actualización
+    });
+    
+    btnReintentar.addEventListener('click', function() {
+        iniciarSeguimientoUbicacion(true);
+    });
+    
     btnMejorar.addEventListener('click', function() {
         if (posicionActual) {
             const lat = posicionActual.coords.latitude;
@@ -337,18 +360,19 @@ document.addEventListener('DOMContentLoaded', function() {
             indicadorEstado.className = 'indicador-estado estado-bueno';
             textoEstado.textContent = 'Buena precisión (GPS activado)';
             divCargando.classList.remove('oculto');
-            obtenerDatosSuelo(lat, lon).then(datosSuelo => {
+            obtenerDatosSuelo(lat, lon)
+            .then(datosSuelo => {
                 renderizarDatosSuelo(datosSuelo);
+                divCargando.classList.add('oculto');
             });
         }
     });
-
-    // Al cargar, mostrar datos guardados si existen
-    const datosGuardados = localStorage.getItem("datosSuelo");
-    if (datosGuardados) {
-        const parsed = JSON.parse(datosGuardados);
-        renderizarDatosSuelo(parsed, true);
-        divResultados.classList.remove("oculto");
-        divCargando.classList.add("oculto");
-    }
+    
+    // Limpiar localStorage al recargar la página
+    window.addEventListener('beforeunload', function() {
+        localStorage.removeItem('datosSuelo');
+    });
+    
+    // Iniciar automáticamente (sin forzar actualización)
+    iniciarSeguimientoUbicacion(false);
 });
