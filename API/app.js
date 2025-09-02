@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnUbicacion = document.getElementById('btn-ubicacion');
     const btnReintentar = document.getElementById('btn-reintentar');
     const btnMejorar = document.getElementById('btn-mejorar');
-    const btnRefrescar = document.getElementById('btn-refrescar');
     const infoUbicacion = document.getElementById('info-ubicacion');
     const spanCoordenadas = document.getElementById('coordenadas');
     const spanPrecision = document.getElementById('precision');
@@ -153,15 +152,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } else {
-            // ⚠️ Solo mostrar este mensaje si no es desde storage
-            if (!desdeStorage) {
-                html += '<p>⚠️ No se pudieron obtener datos específicos de suelo para esta ubicación.</p>';
-            }
+            html += '<p>⚠️ No se pudieron obtener datos específicos de suelo para esta ubicación.</p>';
         }
         divSuelo.innerHTML = html;
 
-        // Guardar en localStorage solo si son datos nuevos de la API
-        if (!desdeStorage) {
+        // ✅ Guardar en localStorage solo si los datos son válidos
+        if (!desdeStorage && datos && Object.keys(datos).length > 0) {
             localStorage.setItem("datosSuelo", JSON.stringify(datos));
         }
 
@@ -207,39 +203,39 @@ document.addEventListener('DOMContentLoaded', function() {
         const procesado = {};
         try {
             if (data && data.properties) {
-                if (data.properties.phh2o?.depths) {
+                if (data.properties.phh2o && data.properties.phh2o.depths) {
                     const phData = data.properties.phh2o.depths[0];
-                    if (phData?.values) {
+                    if (phData && phData.values) {
                         procesado.pH = phData.values.mean / 10;
                     }
                 }
-                if (data.properties.soc?.depths) {
+                if (data.properties.soc && data.properties.soc.depths) {
                     const socData = data.properties.soc.depths[0];
-                    if (socData?.values) {
+                    if (socData && socData.values) {
                         procesado.materiaOrganica = (socData.values.mean / 100) * 1.724;
                     }
                 }
-                if (data.properties.bdod?.depths) {
+                if (data.properties.bdod && data.properties.bdod.depths) {
                     const bdData = data.properties.bdod.depths[0];
-                    if (bdData?.values) {
+                    if (bdData && bdData.values) {
                         procesado.densidadAparente = bdData.values.mean / 100;
                     }
                 }
-                if (data.properties.sand?.depths) {
+                if (data.properties.sand && data.properties.sand.depths) {
                     const sandData = data.properties.sand.depths[0];
-                    if (sandData?.values) {
+                    if (sandData && sandData.values) {
                         procesado.contenidoArena = sandData.values.mean / 10;
                     }
                 }
-                if (data.properties.clay?.depths) {
+                if (data.properties.clay && data.properties.clay.depths) {
                     const clayData = data.properties.clay.depths[0];
-                    if (clayData?.values) {
+                    if (clayData && clayData.values) {
                         procesado.contenidoArcilla = clayData.values.mean / 10;
                     }
                 }
-                if (data.properties.silt?.depths) {
+                if (data.properties.silt && data.properties.silt.depths) {
                     const siltData = data.properties.silt.depths[0];
-                    if (siltData?.values) {
+                    if (siltData && siltData.values) {
                         procesado.contenidoLimo = siltData.values.mean / 10;
                     }
                 }
@@ -273,11 +269,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function iniciarSeguimientoUbicacion() {
         limpiarUI();
         divCargando.classList.remove('oculto');
+        
+        // 🔄 Borrar datos anteriores del localStorage al iniciar una nueva búsqueda
+        localStorage.removeItem("datosSuelo");
+        
         if (navigator.geolocation) {
             if (idSeguimiento !== null) {
                 navigator.geolocation.clearWatch(idSeguimiento);
             }
-            const opciones = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+            const opciones = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
             idSeguimiento = navigator.geolocation.watchPosition(
                 function(posicion) {
                     const lat = posicion.coords.latitude;
@@ -298,10 +302,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     divCargando.classList.add('oculto');
                     let msgError = 'No se pudo obtener la ubicación: ';
                     switch(error.code) {
-                        case error.PERMISSION_DENIED: msgError += 'Permisos de ubicación denegados.'; break;
-                        case error.POSITION_UNAVAILABLE: msgError += 'Ubicación no disponible.'; break;
-                        case error.TIMEOUT: msgError += 'Tiempo de espera agotado.'; break;
-                        default: msgError += 'Error desconocido.'; break;
+                        case error.PERMISSION_DENIED:
+                            msgError += 'Permisos de ubicación denegados.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            msgError += 'Ubicación no disponible.';
+                            break;
+                        case error.TIMEOUT:
+                            msgError += 'Tiempo de espera agotado.';
+                            break;
+                        default:
+                            msgError += 'Error desconocido.';
+                            break;
                     }
                     mostrarError(msgError);
                 },
@@ -331,24 +343,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    btnRefrescar.addEventListener("click", function() {
-        if (posicionActual) {
-            const lat = posicionActual.coords.latitude;
-            const lon = posicionActual.coords.longitude;
-            divCargando.classList.remove("oculto");
-            obtenerDatosSuelo(lat, lon).then(datosSuelo => {
-                renderizarDatosSuelo(datosSuelo);
-            });
-        } else {
-            alert("Primero obtén tu ubicación antes de refrescar los datos.");
-        }
-    });
-
     // Al cargar, mostrar datos guardados si existen
     const datosGuardados = localStorage.getItem("datosSuelo");
     if (datosGuardados) {
-        renderizarDatosSuelo(JSON.parse(datosGuardados), true);
-    } else {
-        iniciarSeguimientoUbicacion();
+        const parsed = JSON.parse(datosGuardados);
+        renderizarDatosSuelo(parsed, true);
+        divResultados.classList.remove("oculto");
+        divCargando.classList.add("oculto");
     }
 });
