@@ -1,37 +1,97 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistente de Cultivos - Papa y Cebolla</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- ✅ Leaflet CSS -->
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
-<body>
-
 
 <body>
+
+   <div id="permisoUbicacion">
+  <div>
+    <h3>📍 Activar permisos de ubicación</h3>
+    <p>
+      Para poder mostrar tu ubicación actual en el mapa, debes activar los permisos de ubicación
+      en tu navegador o aplicación.
+    </p>
+    <button onclick="abrirPermisos()" class="btn-permisos">
+      Abrir configuración de permisos
+    </button>
+  </div>
+</div>
+
+<style>
+/* Estilos del modal */
+#permisoUbicacion {
+  display: none; /* oculto por defecto */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* 🔥 más alto que el mapa */
+}
+
+#permisoUbicacion > div {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 90%;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+#permisoUbicacion h3 {
+  margin-bottom: 10px;
+}
+
+.btn-permisos {
+  margin-top: 10px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  background: #007bff;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+</style>
+
+
+
     <div class="container">
         <header>
             <h1>🌱 Asistente de Cultivos</h1>
             <p class="subtitle">Obtén recomendaciones de suelo para papa y cebolla</p>
         </header>
-<div id="info-ubicacion" class="location-info oculto">
-    <div class="location-icon">📍</div>
-    <div class="location-details">
-        <p><strong>Ubicación detectada:</strong></p>
-        <div class="coordinates" id="coordenadas">Cargando...</div>
-        <p class="accuracy" id="precision">Precisión: calculando...</p>
-        <div class="gps-status" id="gps-status">
-            <span class="indicador-estado" id="indicador-estado"></span>
-            <span id="texto-estado">Evaluando precisión del GPS...</span>
+        <div id="info-ubicacion" class="location-info oculto">
+            <div class="location-icon">📍</div>
+            <div class="location-details">
+                <p><strong>Ubicación detectada:</strong></p>
+                <div class="coordinates" id="coordenadas">Cargando...</div>
+                <p class="accuracy" id="precision">Precisión: calculando...</p>
+                <div class="gps-status" id="gps-status">
+                    <span class="indicador-estado" id="indicador-estado"></span>
+                    <span id="texto-estado">Evaluando precisión del GPS...</span>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
 
-<!-- ✅ Aquí se muestra el mapa -->
-<div id="map" style="height:300px; margin-top:15px; border-radius:8px;" class="oculto"></div>
+
+
+
+
+
+        <div id="map" style="height:300px; margin-top:15px; border-radius:8px;" class="oculto"></div>
 
 
 
@@ -78,7 +138,8 @@
                         <span class="property-name">Drenaje:</span> Bueno, evitar encharcamientos
                     </div>
                     <div class="recommendation">
-                        💡 <strong>Tip:</strong> Para mejorar el rendimiento, asegúrate de un buen drenaje y rotación de cultivos. La papa es sensible al pH muy alto.
+                        💡 <strong>Tip:</strong> Para mejorar el rendimiento, asegúrate de un buen drenaje y rotación de
+                        cultivos. La papa es sensible al pH muy alto.
                     </div>
                 </div>
                 <div class="crop-card">
@@ -96,7 +157,8 @@
                         <span class="property-name">Drenaje:</span> Bueno, suelos bien estructurados
                     </div>
                     <div class="recommendation">
-                        💡 <strong>Tip:</strong> La cebolla prefiere suelos bien drenados con buena exposición solar. Tolera mejor los suelos ligeramente alcalinos que la papa.
+                        💡 <strong>Tip:</strong> La cebolla prefiere suelos bien drenados con buena exposición solar.
+                        Tolera mejor los suelos ligeramente alcalinos que la papa.
                     </div>
                 </div>
                 <div id="analisis-compatibilidad" class="compatibility-analysis">
@@ -117,64 +179,71 @@
 
     <script src="app.js"></script>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    // Crear el mapa
-    const map = L.map('map').setView([0, 0], 15);
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Crear el mapa
+        const map = L.map('map').setView([0, 0], 15);
 
-    // Agregar capa de mapa (tiles de OpenStreetMap)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-    }).addTo(map);
+        // Agregar capa de mapa (tiles de OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+        }).addTo(map);
 
-    // Marcador para la ubicación
-    let marker;
+        // Marcador para la ubicación
+        let marker;
 
-    // Opciones de geolocalización para más precisión
-    const options = {
-      enableHighAccuracy: true, // GPS en lugar de WiFi
-      timeout: 10000, // esperar máximo 10 seg
-      maximumAge: 0 // no usar cache
-    };
+        // Opciones de geolocalización para más precisión
+        const options = {
+            enableHighAccuracy: true, // GPS en lugar de WiFi
+            timeout: 10000, // esperar máximo 10 seg
+            maximumAge: 0 // no usar cache
+        };
 
-    // Función de éxito
-    function success(pos) {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      const accuracy = pos.coords.accuracy; // en metros
+        // Función de éxito
+        function success(pos) {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            const accuracy = pos.coords.accuracy; // en metros
 
-      // Centrar el mapa
-      map.setView([lat, lon], 18);
+            // Centrar el mapa
+            map.setView([lat, lon], 18);
 
-      // Si no existe el marcador lo crea, si existe lo actualiza
-      if (!marker) {
-        marker = L.marker([lat, lon]).addTo(map)
-          .bindPopup(`📍 Estás aquí<br>Precisión: ${accuracy.toFixed(1)} m`)
-          .openPopup();
-      } else {
-        marker.setLatLng([lat, lon])
-          .setPopupContent(`📍 Estás aquí<br>Precisión: ${accuracy.toFixed(1)} m`);
-      }
-    }
+            // Si no existe el marcador lo crea, si existe lo actualiza
+            if (!marker) {
+                marker = L.marker([lat, lon]).addTo(map)
+                    .bindPopup(`📍 Estás aquí<br>Precisión: ${accuracy.toFixed(1)} m`)
+                    .openPopup();
+            } else {
+                marker.setLatLng([lat, lon])
+                    .setPopupContent(`📍 Estás aquí<br>Precisión: ${accuracy.toFixed(1)} m`);
+            }
+        }
 
-    // Función de error
-    function error(err) {
-      console.error(`ERROR(${err.code}): ${err.message}`);
-      alert("No se pudo obtener tu ubicación. Revisa permisos del GPS.");
-    }
+        // Función de error
+        function error(err) {
+            console.error(`ERROR(${err.code}): ${err.message}`);
+            alert("No se pudo obtener tu ubicación. Revisa permisos del GPS.");
+        }
 
-    // Seguir en tiempo real la ubicación
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(success, error, options);
-    } else {
-      alert("Tu navegador no soporta geolocalización.");
-    }
-  </script>
+        // Seguir en tiempo real la ubicación
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(success, error, options);
+        } else {
+            alert("Tu navegador no soporta geolocalización.");
+        }
+    </script>
+
+<script>
+function mostrarPermisoUbicacion() {
+  document.getElementById("permisoUbicacion").style.display = "flex";
+}
+
+function abrirPermisos() {
+  alert("🔔 Abre la configuración del navegador o de la app para permitir el acceso a la ubicación.\n\nEn móviles, busca 'Permisos' > 'Ubicación'.");
+  // En apps Android/iOS se puede intentar con:
+  // window.location.href = "app-settings:";
+}
+</script>
 </body>
+
 </html>
-
-
-
-
-
-
