@@ -73,7 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
             papa: { puntaje: 0, problemas: [], fortalezas: [] },
             cebolla: { puntaje: 0, problemas: [], fortalezas: [] }
         };
-        // pH
         if (datosSuelo.pH) {
             const ph = datosSuelo.pH;
             if (ph >= 5.5 && ph <= 6.5) {
@@ -93,7 +92,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 compatibilidad.cebolla.problemas.push('pH demasiado alto para cebolla');
             }
         }
-        // Materia orgánica
         if (datosSuelo.materiaOrganica) {
             const mo = datosSuelo.materiaOrganica;
             if (mo >= 3) {
@@ -159,8 +157,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         divSuelo.innerHTML = html;
 
-        // 🔹 Guardar en localStorage siempre
+        // Guardar en localStorage
         localStorage.setItem("datosSuelo", JSON.stringify(datos));
+        divCargando.classList.add("oculto"); // 🔹 ocultar loader
+        divResultados.classList.remove("oculto");
 
         // Compatibilidad
         if (datos.pH || datos.materiaOrganica) {
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return procesarDatosSoilGrids(data);
         })
         .catch(err => {
-            console.warn("Error en API ISRIC, usando valores por defecto:", err);
+            console.error("Error obteniendo datos de SoilGrids:", err);
             return {
                 pH: 6.2,
                 materiaOrganica: 2.5,
@@ -295,38 +295,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     spanPrecision.textContent = `Precisión: ±${Math.round(precision)} metros`;
                     textoEstado.textContent = evaluarPrecisionGPS(precision);
                     infoUbicacion.classList.remove('oculto');
-
-                    // 🔹 Siempre consultar SoilGrids al pedir ubicación
-                    divCargando.classList.remove('oculto');
-                    obtenerDatosSuelo(lat, lon)
-                    .then(datosSuelo => {
-                        renderizarDatosSuelo(datosSuelo);
-                        divCargando.classList.add('oculto');
-                        divResultados.classList.remove('oculto');
-                    });
+                    if (precision < 100) {
+                        obtenerDatosSuelo(lat, lon)
+                        .then(datosSuelo => {
+                            renderizarDatosSuelo(datosSuelo);
+                        });
+                    }
                 },
                 function(error) {
                     divCargando.classList.add('oculto');
-                    if (!posicionActual) { // solo mostrar error si nunca se obtuvo ubicación
-                        let msgError = 'No se pudo obtener la ubicación: ';
-                        switch(error.code) {
-                            case error.PERMISSION_DENIED:
-                                msgError += 'Permisos de ubicación denegados.';
-                                break;
-                            case error.POSITION_UNAVAILABLE:
-                                msgError += 'Ubicación no disponible.';
-                                break;
-                            case error.TIMEOUT:
-                                msgError += 'Tiempo de espera agotado.';
-                                break;
-                            default:
-                                msgError += 'Error desconocido.';
-                                break;
-                        }
-                        mostrarError(msgError);
-                    } else {
-                        console.warn("Error de geolocalización ignorado porque ya hay una posición previa:", error);
+                    let msgError = 'No se pudo obtener la ubicación: ';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            msgError += 'Permisos de ubicación denegados.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            msgError += 'Ubicación no disponible.';
+                            break;
+                        case error.TIMEOUT:
+                            msgError += 'Tiempo de espera agotado.';
+                            break;
+                        default:
+                            msgError += 'Error desconocido.';
+                            break;
                     }
+                    mostrarError(msgError);
                 },
                 opciones
             );
@@ -338,9 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Eventos
     btnUbicacion.addEventListener('click', iniciarSeguimientoUbicacion);
-    btnReintentar.addEventListener('click', function() {
-        iniciarSeguimientoUbicacion();
-    });
+    btnReintentar.addEventListener('click', iniciarSeguimientoUbicacion);
     btnMejorar.addEventListener('click', function() {
         if (posicionActual) {
             const lat = posicionActual.coords.latitude;
@@ -353,12 +344,10 @@ document.addEventListener('DOMContentLoaded', function() {
             obtenerDatosSuelo(lat, lon)
             .then(datosSuelo => {
                 renderizarDatosSuelo(datosSuelo);
-                divCargando.classList.add('oculto');
             });
         }
     });
 
-    // 🔹 Evento refrescar
     btnRefrescar.addEventListener("click", function() {
         if (posicionActual) {
             const lat = posicionActual.coords.latitude;
@@ -366,19 +355,16 @@ document.addEventListener('DOMContentLoaded', function() {
             divCargando.classList.remove("oculto");
             obtenerDatosSuelo(lat, lon).then(datosSuelo => {
                 renderizarDatosSuelo(datosSuelo);
-                divCargando.classList.add("oculto");
-                divResultados.classList.remove("oculto");
             });
         } else {
             alert("Primero obtén tu ubicación antes de refrescar los datos.");
         }
     });
 
-    // 🔹 Al cargar, mostrar datos guardados si existen
+    // Al cargar, mostrar datos guardados si existen
     const datosGuardados = localStorage.getItem("datosSuelo");
     if (datosGuardados) {
         renderizarDatosSuelo(JSON.parse(datosGuardados));
-        divResultados.classList.remove("oculto");
     } else {
         iniciarSeguimientoUbicacion();
     }
