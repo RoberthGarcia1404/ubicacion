@@ -32,7 +32,7 @@ jobs:
       - name: Subir archivos de la carpeta ruleta
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ''  # ¡Aquí cambiamos de '.' a 'ruleta'!
+          path: 'API'  # ¡Aquí cambiamos de '.' a 'ruleta'!
 
       - name: Desplegar en GitHub Pages
         id: deployment
